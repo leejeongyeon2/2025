@@ -54,6 +54,3 @@ if selected_mbti:
                 unsafe_allow_html=True
             )
 
-# 실행 안내
-st.markdown("---")
-st.caption("💻 터미널에서 `streamlit run app.py` 로 실행하세요.")
