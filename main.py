@@ -1,56 +1,67 @@
 import streamlit as st
 
 # 페이지 설정
-st.set_page_config(page_title="MBTI 직업 추천기", page_icon="💡", layout="wide")
+st.set_page_config(page_title="MBTI 궁합 테스트", page_icon="💖", layout="centered")
 
-# MBTI별 추천 직업 + 이미지
-mbti_jobs = {
-    "INTJ": {
-        "jobs": ["전략 컨설턴트", "데이터 과학자", "연구원"],
-        "img": "https://images.unsplash.com/photo-1581091012184-5c05f1f7f885"
-    },
-    "ENFP": {
-        "jobs": ["광고 기획자", "탐험가", "콘텐츠 크리에이터"],
-        "img": "https://images.unsplash.com/photo-1522202222190-dc93d7b5f3ae"
-    },
-    "INFJ": {
-        "jobs": ["심리상담가", "작가", "교육 전문가"],
-        "img": "https://images.unsplash.com/photo-1507842217343-583bb7270b66"
-    },
-    "ISTP": {
-        "jobs": ["엔지니어", "파일럿", "응급 구조원"],
-        "img": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d"
-    },
-    # 필요 시 나머지 MBTI도 추가 가능
+# MBTI 궁합 데이터 (예시)
+compatibility_data = {
+    ("INTJ", "ENFP"): {"score": 95, "desc": "서로의 부족한 부분을 채워주는 완벽한 조합!"},
+    ("ENFP", "INTJ"): {"score": 95, "desc": "서로의 장단점이 조화를 이루는 최고의 궁합!"},
+    ("INFJ", "ENTP"): {"score": 90, "desc": "서로의 생각을 자극하며 성장하는 관계."},
+    ("ENTP", "INFJ"): {"score": 90, "desc": "차분함과 활발함이 만나 좋은 시너지!"},
+    ("ISTJ", "ESFP"): {"score": 88, "desc": "서로 다른 성격이 균형을 맞추는 관계."},
+    ("ESFP", "ISTJ"): {"score": 88, "desc": "정반대의 성향이지만 서로에게 배울 점이 많아요."}
+    # 필요하면 더 추가 가능
 }
 
+mbti_list = [
+    "INTJ","INTP","ENTJ","ENTP",
+    "INFJ","INFP","ENFJ","ENFP",
+    "ISTJ","ISFJ","ESTJ","ESFJ",
+    "ISTP","ISFP","ESTP","ESFP"
+]
+
+# 타이틀
 st.markdown(
     """
-    <h1 style="text-align:center; color:#4CAF50;">💡 MBTI 기반 직업 추천기</h1>
-    <p style="text-align:center; font-size:18px;">당신의 MBTI를 선택하면 어울리는 직업과 이미지를 추천해드립니다!</p>
+    <h1 style="text-align:center; color:#E91E63;">💖 MBTI 궁합 테스트</h1>
+    <p style="text-align:center; font-size:18px; color:#555;">
+    두 사람의 MBTI를 선택하면 궁합 점수를 알려드립니다!
+    </p>
     """,
     unsafe_allow_html=True
 )
 
 # MBTI 선택
-selected_mbti = st.selectbox("MBTI를 선택하세요", list(mbti_jobs.keys()))
+col1, col2 = st.columns(2)
+with col1:
+    my_mbti = st.selectbox("당신의 MBTI", mbti_list)
+with col2:
+    partner_mbti = st.selectbox("상대방 MBTI", mbti_list)
 
-if selected_mbti:
-    data = mbti_jobs[selected_mbti]
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        st.image(data["img"], caption=f"{selected_mbti} 추천 분위기 이미지", use_container_width=True)
-
-    with col2:
-        st.markdown(f"## 📌 {selected_mbti} 유형 추천 직업")
-        for job in data["jobs"]:
-            st.markdown(
-                f"""
-                <div style='background-color:#f0f8ff; padding:15px; border-radius:10px; margin-bottom:10px;'>
-                    <b style='color:#2E86C1;'>✅ {job}</b>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+# 궁합 결과
+if st.button("궁합 보기 💌"):
+    result = compatibility_data.get((my_mbti, partner_mbti))
+    if result:
+        score = result["score"]
+        desc = result["desc"]
+        st.markdown(
+            f"""
+            <div style='background-color:#fff0f5; padding:20px; border-radius:15px; text-align:center;'>
+                <h2 style='color:#E91E63;'>궁합 점수: {score}점</h2>
+                <p style='font-size:18px; color:#555;'>{desc}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"""
+            <div style='background-color:#f0f8ff; padding:20px; border-radius:15px; text-align:center;'>
+                <h2 style='color:#2E86C1;'>데이터 없음</h2>
+                <p style='font-size:18px; color:#555;'>아직 등록되지 않은 궁합이에요. 😢</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
