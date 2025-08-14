@@ -1,39 +1,59 @@
 import streamlit as st
 
-# MBTI별 추천 직업 데이터
+# 페이지 설정
+st.set_page_config(page_title="MBTI 직업 추천기", page_icon="💡", layout="wide")
+
+# MBTI별 추천 직업 + 이미지
 mbti_jobs = {
-    "INTJ": ["전략 컨설턴트", "데이터 과학자", "연구원"],
-    "INTP": ["소프트웨어 개발자", "이론 물리학자", "UX 디자이너"],
-    "ENTJ": ["기업 경영자", "프로젝트 매니저", "변호사"],
-    "ENTP": ["창업가", "마케팅 전문가", "언론인"],
-    "INFJ": ["심리상담가", "작가", "교육 전문가"],
-    "INFP": ["예술가", "작사가", "사회복지사"],
-    "ENFJ": ["교사", "인사담당자", "홍보 전문가"],
-    "ENFP": ["광고 기획자", "탐험가", "콘텐츠 크리에이터"],
-    "ISTJ": ["회계사", "법률 전문가", "군인"],
-    "ISFJ": ["간호사", "초등교사", "행정직"],
-    "ESTJ": ["공무원", "운영 관리자", "금융 전문가"],
-    "ESFJ": ["영업 관리자", "호텔 매니저", "이벤트 기획자"],
-    "ISTP": ["엔지니어", "파일럿", "응급 구조원"],
-    "ISFP": ["사진작가", "패션 디자이너", "음악가"],
-    "ESTP": ["기업가", "스포츠 코치", "소방관"],
-    "ESFP": ["배우", "MC", "관광 가이드"]
+    "INTJ": {
+        "jobs": ["전략 컨설턴트", "데이터 과학자", "연구원"],
+        "img": "https://images.unsplash.com/photo-1581091012184-5c05f1f7f885"
+    },
+    "ENFP": {
+        "jobs": ["광고 기획자", "탐험가", "콘텐츠 크리에이터"],
+        "img": "https://images.unsplash.com/photo-1522202222190-dc93d7b5f3ae"
+    },
+    "INFJ": {
+        "jobs": ["심리상담가", "작가", "교육 전문가"],
+        "img": "https://images.unsplash.com/photo-1507842217343-583bb7270b66"
+    },
+    "ISTP": {
+        "jobs": ["엔지니어", "파일럿", "응급 구조원"],
+        "img": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d"
+    },
+    # 필요 시 나머지 MBTI도 추가 가능
 }
 
-st.title("💡 MBTI 기반 직업 추천기")
-st.write("당신의 MBTI를 선택하면 어울리는 직업을 추천해드립니다!")
+st.markdown(
+    """
+    <h1 style="text-align:center; color:#4CAF50;">💡 MBTI 기반 직업 추천기</h1>
+    <p style="text-align:center; font-size:18px;">당신의 MBTI를 선택하면 어울리는 직업과 이미지를 추천해드립니다!</p>
+    """,
+    unsafe_allow_html=True
+)
 
 # MBTI 선택
 selected_mbti = st.selectbox("MBTI를 선택하세요", list(mbti_jobs.keys()))
 
-# 추천 직업 출력
 if selected_mbti:
-    st.subheader(f"📌 {selected_mbti} 유형 추천 직업")
-    jobs = mbti_jobs[selected_mbti]
-    for job in jobs:
-        st.write(f"- {job}")
+    data = mbti_jobs[selected_mbti]
+    col1, col2 = st.columns([1, 2])
 
-# 실행 방법 안내
+    with col1:
+        st.image(data["img"], caption=f"{selected_mbti} 추천 분위기 이미지", use_container_width=True)
+
+    with col2:
+        st.markdown(f"## 📌 {selected_mbti} 유형 추천 직업")
+        for job in data["jobs"]:
+            st.markdown(
+                f"""
+                <div style='background-color:#f0f8ff; padding:15px; border-radius:10px; margin-bottom:10px;'>
+                    <b style='color:#2E86C1;'>✅ {job}</b>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+# 실행 안내
 st.markdown("---")
-st.caption("터미널에서 `streamlit run app.py`로 실행하세요.")
-
+st.caption("💻 터미널에서 `streamlit run app.py` 로 실행하세요.")
