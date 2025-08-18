@@ -1,18 +1,15 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from hashlib import sha256
 
-# 페이지 설정
 st.set_page_config(page_title="연애 능력치 테스트", page_icon="💘")
 
 st.title("💘 연애 능력치 테스트")
 st.caption("각 문항을 1(전혀 아니다) ~ 5(매우 그렇다)로 선택하세요.")
 
-# 카테고리
 CATS = ["매력", "센스", "재력", "집착", "인기도"]
 
-# 질문 목록 (카테고리 매핑)
 questions = [
     {"q": "첫 만남에서 먼저 대화를 잘 이끈다", "cat": "매력"},
     {"q": "상대방의 농담에 리액션을 잘 해준다", "cat": "센스"},
@@ -26,42 +23,75 @@ questions = [
     {"q": "새로운 사람과 쉽게 친해진다", "cat": "인기도"},
 ]
 
-# 닉네임
 name = st.text_input("닉네임을 입력하세요", value="")
 
-# 초기 상태값
 if "answers" not in st.session_state:
-    st.session_state.answers = [3] * len(questions)  # 기본값 3(보통)
+    st.session_state.answers = [3] * len(questions)
 
-# 문항 입력 UI
 for i, item in enumerate(questions):
     st.session_state.answers[i] = st.slider(
         item["q"], 1, 5, st.session_state.answers[i], key=f"q_{i}"
     )
 
 def compute_scores(answers, questions):
-    """슬라이더(1~5)를 카테고리별 평균(1~5)로 만들고 → 0~100으로 스케일링."""
     raw = {c: 0 for c in CATS}
     cnt = {c: 0 for c in CATS}
     for val, item in zip(answers, questions):
         raw[item["cat"]] += val
         cnt[item["cat"]] += 1
-
     scores = {}
     for c in CATS:
-        if cnt[c] == 0:
-            scores[c] = 0
-        else:
-            avg = raw[c] / cnt[c]          # 1 ~ 5
-            scores[c] = round((avg - 1) / 4 * 100)  # 0 ~ 100
+        avg = (raw[c] / cnt[c]) if cnt[c] else 0  # 1~5
+        scores[c] = round((avg - 1) / 4 * 100)    # 0~100
     return scores
 
-def radar_chart(scores, title):
+col1, col2 = st.columns(2)
+show = col1.button("결과 보기 💘")
+reset = col2.button("처음부터 다시하기 🔁")
+
+if reset:
+    st.session_state.answers = [3] * len(questions)
+    st.rerun()
+
+if show:
+    scores = compute_scores(st.session_state.answers, questions)
     labels = list(scores.keys())
     values = list(scores.values())
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False)
-    angles_cycle = angles.tolist() + [angles[0]]
-    values_cycle = values + [values[0]]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.plot(angles_cycle, values_cycle, linewidth=2)
+    fig = go.Figure(
+        data=go.Scatterpolar(
+            r=values + [values[0]],
+            theta=labels + [labels[0]],
+            fill="toself",
+            mode="lines+markers",
+        )
+    )
+    fig.update_layout(
+        polar=dict(radialaxis=dict(range=[0, 100])),
+        showlegend=False,
+        margin=dict(l=20, r=20, t=40, b=20),
+        title=f"{name or '익명'}님의 연애 능력치"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    top_sorted = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    low_sorted = sorted(scores.items(), key=lambda x: x[1])
+    top1, top2 = top_sorted[0], top_sorted[1]
+    low1 = low_sorted[0]
+
+    st.subheader("요약")
+    st.write(f"강점: **{top1[0]}({top1[1]})**, {top2[0]}({top2[1]})")
+    st.write(f"보완 포인트: **{low1[0]}({low1[1]})**")
+
+    seed_str = f"{name}-{st.session_state.answers}"
+    idx = int(sha256(seed_str.encode()).hexdigest(), 16) % 5
+    comments = [
+        "🔥 불꽃 카리스마! 썸은 이미 연애.",
+        "😎 능글미 장착. 사람 끌어당기는 자석.",
+        "💸 현실적이고 든든한 타입. 의지됨!",
+        "📱 애정표현 과다 주의. 숨도 쉬어가요!",
+        "🌟 어디서든 빛나는 인기인!",
+    ]
+    st.success(f"{name or '익명'}님 총평: {comments[idx]}")
+else:
+    st.info("모든 문항을 선택한 뒤 **결과 보기**를 눌러보세요.")
