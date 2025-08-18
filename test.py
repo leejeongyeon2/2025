@@ -95,3 +95,6 @@ if show:
     st.success(f"{name or '익명'}님 총평: {comments[idx]}")
 else:
     st.info("모든 문항을 선택한 뒤 **결과 보기**를 눌러보세요.")
+streamlit>=1.35
+plotly>=5.20
+numpy
