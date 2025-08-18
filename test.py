@@ -3,17 +3,17 @@ import numpy as np
 from hashlib import sha256
 import pandas as pd
 
-# 앱 기본 설정 (타이틀/아이콘)
+# 앱 기본 설정
 st.set_page_config(page_title="💘 연애 능력치 테스트 💘", page_icon="💖")
 
-# 🌟 메인 타이틀 출력
+# 메인 타이틀
 st.markdown("<h1 style='text-align:center;'>💖 연애 능력치 테스트 💖</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>✨ 나의 연애 능력치를 확인해보세요! ✨</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>✨ 나의 연애 능력치 & 이름 궁합을 확인해보세요 ✨</p>", unsafe_allow_html=True)
 
-# 능력치 카테고리 정의
+# 능력치 카테고리
 CATS = ["💎 매력", "🎭 센스", "💰 재력", "📱 집착", "🌟 인기도"]
 
-# 질문 리스트 (각 질문은 어떤 카테고리에 속하는지 함께 저장)
+# 질문 리스트
 questions = [
     {"q": "👗 첫 만남에서 외모/패션에 신경을 쓴다", "cat": "💎 매력"},
     {"q": "😏 자신만의 매력 포인트(유머, 분위기 등)가 있다", "cat": "💎 매력"},
@@ -41,14 +41,14 @@ questions = [
     {"q": "💌 소개팅 제안을 자주 받는다", "cat": "🌟 인기도"},
 ]
 
-# 사용자 닉네임 입력
+# 닉네임 입력
 name = st.text_input("✍️ 닉네임을 입력하세요", value="")
 
-# 세션 상태 초기화 (질문 개수가 바뀌면 다시 초기화됨)
+# 세션 상태 초기화 (질문 개수와 answers 개수가 안 맞으면 새로 만듦)
 if "answers" not in st.session_state or len(st.session_state.answers) != len(questions):
-    st.session_state.answers = [3] * len(questions)  # 기본값 3(보통)으로 설정
+    st.session_state.answers = [3] * len(questions)  # 기본값 3(보통)
 
-# 문항 출력 (슬라이더로 답변)
+# 질문 슬라이더 UI
 st.subheader("✨ 질문에 답해주세요 ✨")
 for i, item in enumerate(questions):
     st.session_state.answers[i] = st.slider(
@@ -57,41 +57,41 @@ for i, item in enumerate(questions):
 
 # 점수 계산 함수
 def compute_scores(answers, questions):
-    raw = {c: 0 for c in CATS}  # 카테고리별 점수 합
-    cnt = {c: 0 for c in CATS}  # 카테고리별 질문 개수
+    raw = {c: 0 for c in CATS}
+    cnt = {c: 0 for c in CATS}
     for val, item in zip(answers, questions):
         raw[item["cat"]] += val
         cnt[item["cat"]] += 1
     scores = {}
     for c in CATS:
         avg = (raw[c] / cnt[c]) if cnt[c] else 0
-        scores[c] = round((avg - 1) / 4 * 100)  # 1~5 점수를 0~100으로 환산
+        scores[c] = round((avg - 1) / 4 * 100)  # 1~5 점수를 0~100으로 변환
     return scores
 
-# 버튼 2개 (결과 보기, 리셋)
+# 버튼
 col1, col2 = st.columns(2)
 show = col1.button("💘 결과 보기 💘")
 reset = col2.button("🔄 처음부터 다시하기")
 
-# 리셋 버튼 눌렀을 때
+# 리셋
 if reset:
     st.session_state.answers = [3] * len(questions)
-    st.rerun()  # 페이지 새로고침
+    st.rerun()
 
-# 결과 보기 버튼 눌렀을 때
+# 결과 보기
 if show:
-    scores = compute_scores(st.session_state.answers, questions)  # 점수 계산
+    scores = compute_scores(st.session_state.answers, questions)
 
-    # 📊 시각화 (바 차트)
+    # 📊 바 차트
     df = pd.DataFrame({
         "능력치": list(scores.keys()),
         "점수": list(scores.values())
     }).set_index("능력치")
 
     st.markdown("### 📊 나의 연애 능력치 그래프")
-    st.bar_chart(df)  # bar chart 출력
+    st.bar_chart(df)
 
-    # 결과 요약 (가장 높은 점수 2개 + 가장 낮은 점수 1개)
+    # 결과 요약
     top_sorted = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     low_sorted = sorted(scores.items(), key=lambda x: x[1])
     top1, top2 = top_sorted[0], top_sorted[1]
@@ -101,7 +101,7 @@ if show:
     st.write(f"💖 강점: **{top1[0]}({top1[1]}점)**, **{top2[0]}({top2[1]}점)**")
     st.write(f"💔 보완 포인트: **{low1[0]}({low1[1]}점)**")
 
-    # 총평 (항상 같은 답변이면 같은 멘트 나오도록 sha256 사용)
+    # 총평
     seed_str = f"{name}-{st.session_state.answers}"
     idx = int(sha256(seed_str.encode()).hexdigest(), 16) % 5
     comments = [
@@ -113,14 +113,14 @@ if show:
     ]
     st.success(f"✨ {name or '익명'}님의 총평 ✨\n\n{comments[idx]}")
 
-    # 💞 이름 궁합 기능 추가
+    # 💞 이름 궁합
     st.markdown("---")
     st.subheader("💞 이름 궁합 테스트")
 
     partner = st.text_input("💕 궁합을 보고 싶은 사람의 이름을 입력하세요", value="")
 
     if partner:
-        # 닉네임 + 상대 이름을 해시로 변환 → 0~100 점수 생성
+        # 이름 궁합 점수
         seed_str = f"{name}-{partner}"
         comp_score = int(sha256(seed_str.encode()).hexdigest(), 16) % 101  
         st.write(f"✨ {name} 💖 {partner} ✨ 의 궁합 점수는...")
@@ -137,6 +137,20 @@ if show:
             msg = "😢 애매한 인연... 하지만 친구로는 딱 좋아요!"
         
         st.success(msg)
+
+        # 🌟 이름 궁합 타입
+        type_seed = sum(ord(ch) for ch in (name + partner))
+        love_types = [
+            "🔥 불꽃 같은 사랑 (열정 가득!)",
+            "🌊 잔잔한 파도 같은 사랑 (평화롭고 안정적)",
+            "🌱 새싹 같은 사랑 (풋풋하고 설레는 관계)",
+            "🌙 운명적인 사랑 (만날 수밖에 없는 인연)",
+            "🍀 친구 같은 사랑 (편안하고 든든해요)",
+        ]
+        love_type = love_types[type_seed % len(love_types)]
+
+        st.markdown("### 🔮 이름 궁합 풀이")
+        st.info(love_type)
 
 else:
     st.info("👉 모든 문항을 선택한 뒤 **결과 보기 💘**를 눌러주세요!")
