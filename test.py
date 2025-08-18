@@ -116,3 +116,30 @@ if show:
     st.success(f"✨ {name or '익명'}님의 총평 ✨\n\n{comments[idx]}")
 else:
     st.info("👉 모든 문항을 선택한 뒤 **결과 보기 💘**를 눌러주세요!")
+
+
+
+# 💞 이름 궁합 추가
+st.markdown("---")
+st.subheader("💞 이름 궁합 테스트")
+
+partner = st.text_input("💕 궁합을 보고 싶은 사람의 이름을 입력하세요", value="")
+
+if partner:
+    seed_str = f"{name}-{partner}"
+    comp_score = int(sha256(seed_str.encode()).hexdigest(), 16) % 101  # 0~100
+    st.write(f"✨ {name} 💖 {partner} ✨ 의 궁합 점수는...")
+    st.markdown(f"<h2 style='text-align:center;'>💘 {comp_score}% 💘</h2>", unsafe_allow_html=True)
+
+    # 점수별 멘트
+    if comp_score >= 80:
+        msg = "천생연분 ✨ 두 분은 운명 그 자체예요!"
+    elif comp_score >= 60:
+        msg = "좋은 케미 💕 노력하면 연애 성공!"
+    elif comp_score >= 40:
+        msg = "그럭저럭 😅 서로 이해가 필요해요"
+    else:
+        msg = "😢 애매한 인연... 하지만 친구로는 딱 좋아요!"
+    
+    st.success(msg)
+
