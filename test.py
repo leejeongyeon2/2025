@@ -11,7 +11,7 @@ st.caption("각 문항을 1(전혀 아니다) ~ 5(매우 그렇다)로 선택하
 # 카테고리
 CATS = ["매력", "센스", "재력", "집착", "인기도"]
 
-# 확장된 질문 세트
+# 확장된 질문 세트 (각 카테고리 4문항씩 총 20문항)
 questions = [
     # 매력
     {"q": "첫 만남에서 외모/패션에 신경을 쓴다", "cat": "매력"},
@@ -44,16 +44,20 @@ questions = [
     {"q": "주변에서 소개팅 제안을 자주 받는다", "cat": "인기도"},
 ]
 
+# 닉네임 입력
 name = st.text_input("닉네임을 입력하세요", value="")
 
-if "answers" not in st.session_state:
+# ✅ 세션 상태 초기화 (질문 개수 달라지면 자동 리셋)
+if "answers" not in st.session_state or len(st.session_state.answers) != len(questions):
     st.session_state.answers = [3] * len(questions)
 
+# 문항 입력 UI
 for i, item in enumerate(questions):
     st.session_state.answers[i] = st.slider(
         item["q"], 1, 5, st.session_state.answers[i], key=f"q_{i}"
     )
 
+# 점수 계산 함수
 def compute_scores(answers, questions):
     raw = {c: 0 for c in CATS}
     cnt = {c: 0 for c in CATS}
@@ -66,6 +70,7 @@ def compute_scores(answers, questions):
         scores[c] = round((avg - 1) / 4 * 100)  # 0~100
     return scores
 
+# 버튼
 col1, col2 = st.columns(2)
 show = col1.button("결과 보기 💘")
 reset = col2.button("처음부터 다시하기 🔁")
@@ -77,6 +82,7 @@ if reset:
 if show:
     scores = compute_scores(st.session_state.answers, questions)
 
+    # 📊 시각화 (바 차트)
     df = pd.DataFrame({
         "능력치": list(scores.keys()),
         "점수": list(scores.values())
@@ -84,6 +90,7 @@ if show:
 
     st.bar_chart(df)
 
+    # 결과 요약
     top_sorted = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     low_sorted = sorted(scores.items(), key=lambda x: x[1])
     top1, top2 = top_sorted[0], top_sorted[1]
@@ -93,6 +100,7 @@ if show:
     st.write(f"강점: **{top1[0]}({top1[1]})**, {top2[0]}({top2[1]})")
     st.write(f"보완 포인트: **{low1[0]}({low1[1]})**")
 
+    # 총평 (항상 같은 입력이면 같은 멘트 나오도록)
     seed_str = f"{name}-{st.session_state.answers}"
     idx = int(sha256(seed_str.encode()).hexdigest(), 16) % 5
     comments = [
