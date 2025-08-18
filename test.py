@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-import plotly.graph_objects as go
 from hashlib import sha256
+import pandas as pd
 
 st.set_page_config(page_title="연애 능력치 테스트", page_icon="💘")
 
@@ -41,8 +41,8 @@ def compute_scores(answers, questions):
         cnt[item["cat"]] += 1
     scores = {}
     for c in CATS:
-        avg = (raw[c] / cnt[c]) if cnt[c] else 0  # 1~5
-        scores[c] = round((avg - 1) / 4 * 100)    # 0~100
+        avg = (raw[c] / cnt[c]) if cnt[c] else 0
+        scores[c] = round((avg - 1) / 4 * 100)  # 0~100
     return scores
 
 col1, col2 = st.columns(2)
@@ -55,24 +55,13 @@ if reset:
 
 if show:
     scores = compute_scores(st.session_state.answers, questions)
-    labels = list(scores.keys())
-    values = list(scores.values())
 
-    fig = go.Figure(
-        data=go.Scatterpolar(
-            r=values + [values[0]],
-            theta=labels + [labels[0]],
-            fill="toself",
-            mode="lines+markers",
-        )
-    )
-    fig.update_layout(
-        polar=dict(radialaxis=dict(range=[0, 100])),
-        showlegend=False,
-        margin=dict(l=20, r=20, t=40, b=20),
-        title=f"{name or '익명'}님의 연애 능력치"
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    df = pd.DataFrame({
+        "능력치": list(scores.keys()),
+        "점수": list(scores.values())
+    }).set_index("능력치")
+
+    st.bar_chart(df)
 
     top_sorted = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     low_sorted = sorted(scores.items(), key=lambda x: x[1])
@@ -95,6 +84,3 @@ if show:
     st.success(f"{name or '익명'}님 총평: {comments[idx]}")
 else:
     st.info("모든 문항을 선택한 뒤 **결과 보기**를 눌러보세요.")
-streamlit>=1.35
-plotly>=5.20
-numpy
