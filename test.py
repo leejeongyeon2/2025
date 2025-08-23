@@ -1,47 +1,13 @@
 import streamlit as st
 import random
 
-# 앱 기본 설정 (페이지 제목, 아이콘, 레이아웃)
-st.set_page_config(page_title="🌈 단어 암기 앱", page_icon="📚", layout="centered")
+# -------------------
+# 기본 설정
+# -------------------
+st.set_page_config(page_title="단어 맞추기 앱", page_icon="📝", layout="centered")
 
 # -------------------
-# CSS 스타일 정의 (배경, 카드, 버튼 모양)
-# -------------------
-st.markdown("""
-    <style>
-    body {
-        background: linear-gradient(to right, #ffecd2, #fcb69f); /* 배경 그라데이션 */
-    }
-    .flashcard { /* 플래시카드 스타일 */
-        padding: 30px;
-        border-radius: 20px;
-        text-align: center;
-        background: white;
-        font-size: 28px;
-        font-weight: bold;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        margin: 20px 0;
-    }
-    .option-btn { /* 버튼 스타일 */
-        display: inline-block;
-        padding: 12px 20px;
-        margin: 5px;
-        border-radius: 12px;
-        background: #4CAF50;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .option-btn:hover {
-        background: #45a049;
-        transform: scale(1.05);
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# -------------------
-# 기본 단어 데이터 (20개 예시)
+# 기본 단어 데이터 (예시 20개)
 # -------------------
 default_words = [
     {"word": "apple", "meaning": "사과"},
@@ -67,30 +33,46 @@ default_words = [
 ]
 
 # -------------------
-# 세션 상태 (앱 실행 중 데이터 유지)
+# 세션 상태 초기화
 # -------------------
-if "words" not in st.session_state:  # 단어 리스트
+if "words" not in st.session_state:      # 단어 리스트
     st.session_state.words = default_words.copy()
-if "correct" not in st.session_state:  # 맞춘 개수
+if "correct" not in st.session_state:    # 맞춘 개수
     st.session_state.correct = 0
-if "wrong" not in st.session_state:  # 틀린 개수
+if "wrong" not in st.session_state:      # 틀린 개수
     st.session_state.wrong = 0
-if "current_index" not in st.session_state:  # 현재 플래시카드 인덱스
-    st.session_state.current_index = 0
-if "show_meaning" not in st.session_state:  # 뜻 보기 여부
-    st.session_state.show_meaning = False
+if "quiz_word" not in st.session_state:  # 현재 문제 단어
+    st.session_state.quiz_word = random.choice(st.session_state.words)
+if "options" not in st.session_state:    # 현재 문제 보기
+    st.session_state.options = []
+
+# -------------------
+# 퀴즈 생성 함수
+# -------------------
+def make_quiz():
+    """랜덤으로 문제(단어와 보기 4개)를 생성"""
+    quiz_word = random.choice(st.session_state.words)  # 문제 단어
+    options = [quiz_word["meaning"]]                   # 정답 포함
+    # 오답 보기 추가
+    while len(options) < 4 and len(options) < len(st.session_state.words):
+        m = random.choice(st.session_state.words)["meaning"]
+        if m not in options:
+            options.append(m)
+    random.shuffle(options)                            # 보기 섞기
+    st.session_state.quiz_word = quiz_word
+    st.session_state.options = options
 
 # -------------------
 # 앱 제목
 # -------------------
-st.title("🌈 화려한 단어 암기 앱")
+st.title("📝 단어 맞추기 퀴즈 앱")
 
 # -------------------
-# 단어 추가 폼
+# 단어 추가
 # -------------------
 st.subheader("✏️ 단어 추가")
 with st.form("add_word"):
-    w = st.text_input("단어 입력")
+    w = st.text_input("영어 단어 입력")
     m = st.text_input("뜻 입력")
     submitted = st.form_submit_button("추가")
     if submitted and w and m:
@@ -98,44 +80,22 @@ with st.form("add_word"):
         st.success(f"✅ 추가됨: {w} - {m}")
 
 # -------------------
-# 플래시카드 기능
-# -------------------
-st.subheader("📖 플래시카드")
-word = st.session_state.words[st.session_state.current_index]  # 현재 단어
-content = word["meaning"] if st.session_state.show_meaning else word["word"]
-
-# 카드에 표시
-st.markdown(f"<div class='flashcard'>{content}</div>", unsafe_allow_html=True)
-
-# 버튼 (뜻 보기/다음 단어)
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🔄 단어/뜻 전환"):
-        st.session_state.show_meaning = not st.session_state.show_meaning
-with col2:
-    if st.button("➡️ 다음 단어"):
-        st.session_state.current_index = (st.session_state.current_index + 1) % len(st.session_state.words)
-        st.session_state.show_meaning = False
-
-# -------------------
-# 퀴즈 모드
+# 퀴즈 문제 표시
 # -------------------
 st.subheader("❓ 퀴즈 모드")
-quiz_word = random.choice(st.session_state.words)  # 무작위 문제 단어
-st.write(f"단어: **{quiz_word['word']}**")
 
-# 보기 4개 생성 (정답 + 랜덤 오답)
-options = [quiz_word["meaning"]]
-while len(options) < 4 and len(options) < len(st.session_state.words):
-    m = random.choice(st.session_state.words)["meaning"]
-    if m not in options:
-        options.append(m)
-random.shuffle(options)
+# 새로운 문제 생성 버튼
+if st.button("새 문제 출제"):
+    make_quiz()
+
+# 현재 문제 단어 보여주기
+quiz_word = st.session_state.quiz_word
+st.write(f"영어 단어: **{quiz_word['word']}**")
 
 # 보기 선택
-choice = st.radio("뜻을 고르세요:", options, key=random.random())
+choice = st.radio("뜻을 고르세요:", st.session_state.options, index=None)
 
-# 정답 확인
+# 정답 확인 버튼
 if st.button("정답 확인"):
     if choice == quiz_word["meaning"]:
         st.session_state.correct += 1
@@ -145,7 +105,7 @@ if st.button("정답 확인"):
         st.error(f"❌ 오답입니다! 정답: {quiz_word['meaning']}")
 
 # -------------------
-# 통계 표시
+# 통계
 # -------------------
 st.subheader("📊 통계")
 st.write(f"👍 맞춘 개수: **{st.session_state.correct}**  |  👎 틀린 개수: **{st.session_state.wrong}**")
