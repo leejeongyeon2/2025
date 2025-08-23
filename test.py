@@ -35,20 +35,21 @@ default_words = [
 # -------------------
 # 세션 상태 초기화
 # -------------------
-if "questions" not in st.session_state:     # 시험 문제 리스트
-    st.session_state.questions = random.sample(default_words, 10)  # 10문제 랜덤 추출
-if "current_q" not in st.session_state:     # 현재 문제 번호
+if "questions" not in st.session_state:
+    st.session_state.questions = random.sample(default_words, 10)  # 10문제 랜덤
+if "current_q" not in st.session_state:
     st.session_state.current_q = 0
-if "score" not in st.session_state:         # 맞은 개수
+if "score" not in st.session_state:
     st.session_state.score = 0
-if "finished" not in st.session_state:      # 시험 종료 여부
+if "answers" not in st.session_state:
+    st.session_state.answers = []  # 사용자의 선택 기록
+if "finished" not in st.session_state:
     st.session_state.finished = False
 
 # -------------------
-# 퀴즈 보기 생성 함수
+# 보기 생성 함수
 # -------------------
 def make_options(answer, all_words):
-    """정답 + 랜덤 오답으로 보기 4개 생성"""
     options = [answer]
     while len(options) < 4:
         m = random.choice(all_words)["meaning"]
@@ -66,7 +67,6 @@ st.title("📝 단어 맞추기 시험 모드 (10문제)")
 # 시험 진행
 # -------------------
 if not st.session_state.finished:
-    # 현재 문제 가져오기
     q_index = st.session_state.current_q
     question = st.session_state.questions[q_index]
 
@@ -76,23 +76,34 @@ if not st.session_state.finished:
     # 보기 생성
     options = make_options(question["meaning"], default_words)
 
-    # 선택
-    choice = st.radio("뜻을 고르세요:", options, index=None, key=f"q{q_index}")
+    # 선택 (문제별로 key 고정 → 선택 유지)
+    choice = st.radio("뜻을 고르세요:", options, index=None, key=f"choice_{q_index}")
 
-    # 정답 확인 버튼
-    if st.button("정답 제출"):
-        if choice == question["meaning"]:
-            st.session_state.score += 1
-            st.success("✅ 정답입니다!")
+    # 제출 버튼
+    if st.button("제출", key=f"submit_{q_index}"):
+        if choice is None:
+            st.warning("⚠️ 답을 선택하세요!")
         else:
-            st.error(f"❌ 오답입니다! 정답: {question['meaning']}")
+            # 정답 체크
+            if choice == question["meaning"]:
+                st.session_state.score += 1
+                st.success("✅ 정답입니다!")
+            else:
+                st.error(f"❌ 오답입니다! 정답: {question['meaning']}")
 
-        # 다음 문제로 이동
-        st.session_state.current_q += 1
+            # 답안 기록 저장
+            st.session_state.answers.append({
+                "word": question["word"],
+                "your_answer": choice,
+                "correct_answer": question["meaning"]
+            })
 
-        # 시험 종료 체크
-        if st.session_state.current_q >= 10:
-            st.session_state.finished = True
+            # 다음 문제로 이동
+            st.session_state.current_q += 1
+
+            # 시험 종료 체크
+            if st.session_state.current_q >= 10:
+                st.session_state.finished = True
 
 # -------------------
 # 시험 종료 후 결과
@@ -100,16 +111,17 @@ if not st.session_state.finished:
 if st.session_state.finished:
     st.subheader("📊 시험 종료!")
     st.write(f"최종 점수: **{st.session_state.score} / 10**")
-    if st.session_state.score == 10:
-        st.success("🎉 퍼펙트! 완벽하게 맞췄습니다!")
-    elif st.session_state.score >= 7:
-        st.info("👍 잘했어요! 조금 더 연습하면 완벽해요.")
-    else:
-        st.warning("📖 아직 연습이 필요합니다. 다시 도전해 보세요!")
+
+    # 틀린 문제 복습
+    st.subheader("📖 틀린 문제 복습")
+    for ans in st.session_state.answers:
+        if ans["your_answer"] != ans["correct_answer"]:
+            st.write(f"- 단어 **{ans['word']}** → 당신의 답: {ans['your_answer']} ❌ | 정답: ✅ {ans['correct_answer']}")
 
     # 다시 시작 버튼
     if st.button("다시 시작"):
         st.session_state.questions = random.sample(default_words, 10)
         st.session_state.current_q = 0
         st.session_state.score = 0
+        st.session_state.answers = []
         st.session_state.finished = False
