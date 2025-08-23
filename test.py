@@ -2,7 +2,7 @@ import streamlit as st
 import random
 
 # -------------------
-# 앱 기본 설정
+# 기본 설정
 # -------------------
 st.set_page_config(page_title="단어 맞추기 시험", page_icon="📝", layout="centered")
 
@@ -43,6 +43,8 @@ if "score" not in st.session_state:
     st.session_state.score = 0
 if "answers" not in st.session_state:
     st.session_state.answers = []  # 답안 기록
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False  # 제출 여부
 if "finished" not in st.session_state:
     st.session_state.finished = False
 
@@ -68,33 +70,46 @@ st.title("📝 단어 맞추기 시험 모드 (10문제)")
 # 시험 진행
 # -------------------
 if not st.session_state.finished:
-    current_q = st.session_state.current_index
-    question = st.session_state.questions[current_q]
+    idx = st.session_state.current_index
+    question = st.session_state.questions[idx]
 
-    st.subheader(f"문제 {current_q+1} / 10")
+    st.subheader(f"문제 {idx+1} / 10")
     st.write(f"영어 단어: **{question['word']}**")
 
-    # radio 보기 생성
+    # radio 선택
     options = make_options(question["meaning"])
-    choice = st.radio("뜻을 선택하세요:", options, key=f"q_{current_q}")
+    if "choice" not in st.session_state:
+        st.session_state.choice = None
+    st.session_state.choice = st.radio("뜻을 선택하세요:", options, index=0, key=f"radio_{idx}")
 
     # 제출 버튼
     if st.button("제출"):
-        if choice == question["meaning"]:
+        # 정답 기록
+        is_correct = st.session_state.choice == question["meaning"]
+        if is_correct:
             st.session_state.score += 1
+            st.success("✅ 정답입니다!")
+        else:
+            st.error(f"❌ 오답! 정답: {question['meaning']}")
+
         # 답안 기록
         st.session_state.answers.append({
             "word": question["word"],
-            "your_answer": choice,
+            "your_answer": st.session_state.choice,
             "correct_answer": question["meaning"]
         })
-        # 다음 문제 이동
-        st.session_state.current_index += 1
-        # 시험 종료 체크
-        if st.session_state.current_index >= 10:
-            st.session_state.finished = True
-        # 페이지 리렌더링을 위해 강제로 rerun
-        st.experimental_rerun()
+
+        # 제출 표시 및 다음 문제 이동
+        st.session_state.submitted = True
+
+    # 제출 후 다음 문제 버튼
+    if st.session_state.submitted:
+        if st.button("다음 문제"):
+            st.session_state.current_index += 1
+            st.session_state.submitted = False
+            st.session_state.choice = None
+            if st.session_state.current_index >= 10:
+                st.session_state.finished = True
 
 # -------------------
 # 시험 종료 후 결과
@@ -108,11 +123,12 @@ if st.session_state.finished:
         if ans["your_answer"] != ans["correct_answer"]:
             st.write(f"- 단어: **{ans['word']}** → 당신의 답: {ans['your_answer']} ❌ | 정답: ✅ {ans['correct_answer']}")
 
+    # 다시 시작 버튼
     if st.button("다시 시작"):
-        # 상태 초기화 후 다시 시작
         st.session_state.questions = random.sample(words_list, 10)
         st.session_state.current_index = 0
         st.session_state.score = 0
         st.session_state.answers = []
+        st.session_state.submitted = False
         st.session_state.finished = False
-        st.experimental_rerun()
+        st.session_state.choice = None
