@@ -18,17 +18,21 @@ difficulty_levels = {
 # -------------------
 # 세션 상태 초기화
 # -------------------
-# 페이지 새로고침에도 값 유지
-for key in ["difficulty", "current_index", "score", "questions", "answers", "submitted", "finished"]:
-    if key not in st.session_state:
-        if key in ["questions", "answers"]:
-            st.session_state[key] = []
-        elif key == "difficulty":
-            st.session_state[key] = "보통"
-        elif key == "submitted" or key == "finished":
-            st.session_state[key] = False
-        else:
-            st.session_state[key] = 0
+# KeyError 방지를 위해 모든 필요한 key를 초기화
+if "difficulty" not in st.session_state:
+    st.session_state.difficulty = "보통"
+if "current_index" not in st.session_state:
+    st.session_state.current_index = 0
+if "score" not in st.session_state:
+    st.session_state.score = 0
+if "questions" not in st.session_state:
+    st.session_state.questions = []
+if "answers" not in st.session_state:
+    st.session_state.answers = []
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+if "finished" not in st.session_state:
+    st.session_state.finished = False
 
 # -------------------
 # 사이드바 난이도 선택
@@ -42,17 +46,13 @@ st.session_state.difficulty = st.sidebar.radio(
 # 수학 문제 생성 함수
 # -------------------
 def generate_question(difficulty):
-    """
-    난이도별 랜덤 수학 문제 생성
-    '/' 연산은 항상 정수가 나오도록 계산
-    """
     level = difficulty_levels[difficulty]
     op = random.choice(level["ops"])
     rng = level["range"]
 
     if op == "/":
         b = random.randint(1, rng)
-        a = b * random.randint(1, rng)
+        a = b * random.randint(1, rng)  # 나눗셈은 항상 정수
     else:
         a = random.randint(1, rng)
         b = random.randint(1, rng)
@@ -64,7 +64,7 @@ def generate_question(difficulty):
     return question_text, answer
 
 # -------------------
-# 문제 리스트 10문제 생성 (한 번만)
+# 문제 리스트 생성 (10문제, 한 번만)
 # -------------------
 if not st.session_state.questions:
     for _ in range(10):
@@ -74,15 +74,15 @@ if not st.session_state.questions:
 # -------------------
 # 앱 제목
 # -------------------
-st.title("🎯 수학 퀴즈 (제출 후 다음 문제 버튼)")
+st.title("🎯 안정화 수학 퀴즈 (제출 후 다음 버튼)")
 
 # -------------------
 # 시험 진행
 # -------------------
 if not st.session_state.finished:
     idx = st.session_state.current_index
-    # 현재 인덱스 범위 확인
-    if idx < len(st.session_state.questions):
+    # 문제 접근 시 KeyError 방지
+    if 0 <= idx < len(st.session_state.questions):
         question = st.session_state.questions[idx]
 
         # 문제 카드 표시
@@ -101,7 +101,7 @@ if not st.session_state.finished:
         # -------------------
         # 제출 버튼
         # -------------------
-        if not st.session_state.submitted:  # 이미 제출한 경우 중복 방지
+        if not st.session_state.submitted:  # 제출 중복 방지
             if st.button("제출"):
                 if user_answer.strip() == "":
                     st.warning("⚠️ 답을 입력해주세요!")
@@ -128,12 +128,12 @@ if not st.session_state.finished:
         # -------------------
         # 다음 문제 버튼
         # -------------------
-        if st.session_state.submitted:  # 제출 후에만 다음 문제 버튼 표시
+        if st.session_state.submitted:
             if st.button("다음 문제"):
-                st.session_state.current_index += 1   # 다음 문제로 이동
-                st.session_state.submitted = False    # 제출 상태 초기화
+                st.session_state.current_index += 1
+                st.session_state.submitted = False
                 if st.session_state.current_index >= 10:
-                    st.session_state.finished = True    # 10문제 완료 시 종료
+                    st.session_state.finished = True
 
 # -------------------
 # 시험 종료 후 결과
@@ -147,7 +147,6 @@ if st.session_state.finished:
         if not ans["correct"]:
             st.write(f"- 문제: {ans['question']} → 당신의 답: {ans['your_answer']} ❌ | 정답: ✅ {ans['correct_answer']}")
 
-    # 다시 시작 버튼
     if st.button("다시 시작"):
         st.session_state.current_index = 0
         st.session_state.score = 0
