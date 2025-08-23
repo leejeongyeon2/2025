@@ -1,157 +1,131 @@
-import streamlit as st # Streamlit 라이브러리를 가져옵니다.
-import random # 단어를 무작위로 섞을 때 사용할 random 모듈을 가져옵니다.
+import streamlit as st # Streamlit 라이브러리를 가져옵니다. 웹 앱을 만드는 데 사용해요!
+import random # 명언을 무작위로 선택할 때 사용할 random 모듈을 가져옵니다.
 
 # =========================================================
-# EMOJI_1 1. 기본 앱 설정 및 데이터 초기화 (미리 정의된 단어 포함)
+# EMOJI_2 1. 기본 앱 설정 및 데이터 초기화
 # =========================================================
 
-# 웹 페이지의 레이아웃을 'wide'로 설정합니다.
+# 웹 페이지의 레이아웃을 'wide'로 설정하여 넓게 사용합니다.
 st.set_page_config(layout="wide") 
 
-# 앱의 제목을 설정합니다.
-st.title("EMOJI_2 나만의 단어 암기 게임 (기본 단어 버전) EMOJI_3")
+# 앱의 메인 제목을 설정합니다.
+st.title("EMOJI_3 오늘의 긍정 한 스푼! 명언 추천기 EMOJI_4")
 # 앱에 대한 간단한 설명을 추가합니다.
-st.write("미리 준비된 단어들로 바로 암기 게임을 시작해보세요! EMOJI_4")
+st.write("마음에 따뜻함을 전하는 명언을 만나보세요! EMOJI_5")
 
-# === 중요! 미리 정의된 단어 목록입니다. ===
-# 이 리스트에 원하는 단어와 뜻을 추가하거나 수정할 수 있어요!
-default_words = [
-    {'word': 'apple', 'meaning': '사과'},
-    {'word': 'banana', 'meaning': '바나나'},
-    {'word': 'car', 'meaning': '자동차'},
-    {'word': 'dog', 'meaning': '개'},
-    {'word': 'flower', 'meaning': '꽃'},
-    {'word': 'house', 'meaning': '집'},
-    {'word': 'river', 'meaning': '강'},
-    {'word': 'mountain', 'meaning': '산'},
-    {'word': 'ocean', 'meaning': '바다'},
-    {'word': 'dream', 'meaning': '꿈'},
-    {'word': 'hope', 'meaning': '희망'},
-    {'word': 'friend', 'meaning': '친구'},
-    {'word': 'love', 'meaning': '사랑'},
-    {'word': 'future', 'meaning': '미래'},
+# === 중요! 미리 정의된 긍정 명언 목록입니다. ===
+# 'quote'는 명언 내용, 'author'는 작가를 나타냅니다.
+# 여기에 원하는 명언을 더 추가하거나 수정할 수 있어요!
+default_quotes = [
+    {'quote': '나는 내가 생각하는 나이다.', 'author': '노먼 빈센트 필'},
+    {'quote': '오늘이라는 날은 다시 오지 않는다는 것을 기억하라.', 'author': '단테'},
+    {'quote': '행동은 모든 성공의 기본적인 열쇠이다.', 'author': '파블로 피카소'},
+    {'quote': '성공은 작은 노력들이 매일 반복되는 결과이다.', 'author': '로버트 칼리에'},
+    {'quote': '우리가 간절히 바라는 꿈을 위해 무엇이든 할 수 있다는 것을 깨달을 때, 우리의 잠재력은 무한하다.', 'author': '오프라 윈프리'},
+    {'quote': '가능한 일을 하기 위해선 한 가지 방법밖에 없다. 그 일을 사랑하는 것이다.', 'author': '스티브 잡스'},
+    {'quote': '우리가 할 수 있는 가장 큰 일은 결코 쓰러지지 않는 것이 아니라, 쓰러질 때마다 일어서는 것이다.', 'author': '공자'},
+    {'quote': '성공으로 가는 엘리베이터는 고장 났다. 당신은 계단을 이용해야 한다. 한 번에 한 계단씩.', 'author': '조 지라드'},
+    {'quote': '시작이 반이다.', 'author': '아리스토텔레스'},
+    {'quote': '태도는 사소한 것이지만 모든 것을 변화시킨다.', 'author': '윈스턴 처칠'},
+    {'quote': '길이 없으면 길을 만들면서 가라.', 'author': '이창동'},
+    {'quote': '작은 기회가 종종 위대한 기업의 시작이다.', 'author': '데모스테네스'},
+    {'quote': '꿈을 포기하지 마라. 한 번도 시작하지 않았다는 것을 후회하지 마라.', 'author': 'J.K. 롤링'},
+    {'quote': '가장 큰 영광은 한 번도 넘어지지 않는 것이 아니라 넘어질 때마다 일어나는 것이다.', 'author': '넬슨 만델라'},
+    {'quote': '변화를 두려워하지 않는 용기, 그것이 당신을 성장시킬 것이다.', 'author': '에머슨'},
 ]
 # =========================================
 
-# 'words'라는 키가 session_state에 없으면, 미리 정의된 'default_words'로 초기화합니다.
-# 이렇게 하면 앱을 실행하자마자 이 단어들이 목록에 나타나요!
-if 'words' not in st.session_state:
-    st.session_state.words = list(default_words) # default_words의 복사본을 사용하여 변경되지 않도록 합니다.
+# Streamlit의 'session_state'를 사용하여 앱 상태를 유지합니다.
+# 'all_quotes'가 session_state에 없으면(앱이 처음 실행될 때), 기본 명언 목록으로 초기화합니다.
+# 사용자가 추가하는 명언도 여기에 함께 저장됩니다.
+if 'all_quotes' not in st.session_state:
+    st.session_state.all_quotes = list(default_quotes) # 리스트의 복사본을 저장합니다.
+    random.shuffle(st.session_state.all_quotes) # 앱 시작 시 명언을 무작위로 섞어줍니다.
 
-# 'game_mode_active' 키가 없으면 False로 초기화합니다.
-if 'game_mode_active' not in st.session_state:
-    st.session_state.game_mode_active = False 
-
-# 'current_word_index' 키가 없으면 0으로 초기화합니다.
-if 'current_word_index' not in st.session_state:
-    st.session_state.current_word_index = 0 
-
-st.sidebar.header("메뉴")
-
+# 'current_quote_index' 키가 없으면 0으로 초기화합니다.
+# 현재 화면에 표시되는 명언의 인덱스를 저장합니다.
+if 'current_quote_index' not in st.session_state:
+    st.session_state.current_quote_index = 0
 
 # =========================================================
-# EMOJI_5 (이전 버전의 단어 추가하기 섹션은 이번 버전에서 제거되었습니다.)
+# ✨ 2. 명언 표시 및 '다음 명언 보기' 기능
 # =========================================================
 
+# 명언을 표시할 공간을 나눕니다.
+col_display, col_button = st.columns([3, 1]) # 3:1 비율로 컬럼을 나눕니다.
 
-# =========================================================
-# EMOJI_6 2. 현재 단어 목록 보기 섹션
-# =========================================================
-
-# 섹션의 제목을 설정합니다.
-st.header("EMOJI_7 현재 단어 목록")
-
-# 미리 정의된 단어가 항상 있으므로, 이 부분은 항상 실행됩니다.
-# 탭 기능을 사용해서 '단어 목록'과 '게임 시작'을 분리합니다.
-tab1, tab2 = st.tabs(["단어 목록", "게임 시작"])
-
-# '단어 목록' 탭 안의 내용
-with tab1:
-    # st.dataframe을 사용하여 단어 목록을 예쁜 표 형태로 보여줍니다.
-    st.dataframe(st.session_state.words, use_container_width=True) 
-    
-    # '현재 목록 초기화' 버튼을 만듭니다.
-    # 이 버튼을 누르면 'default_words'로 목록이 다시 채워집니다.
-    if st.button("현재 목록 초기화", help="초기 단어 목록으로 되돌립니다.", type="secondary"):
-        st.session_state.words = list(default_words) # 초기 단어 목록으로 복원
-        st.info("단어 목록이 초기화되었어요! ✨") 
-        st.session_state.game_mode_active = False # 혹시 게임 중이었다면 종료
-        st.session_state.current_word_index = 0 # 인덱스도 초기화
-        st.experimental_rerun() # 앱을 새로고침하여 변경사항을 즉시 반영합니다.
-    
-    # 추가적으로 '모든 단어 삭제' 기능을 남겨둘 수도 있지만,
-    # '초기화' 기능이 있으니 여기서는 생략했습니다.
-    # 만약 완전히 빈 상태로 만들고 싶다면 아래 코드를 추가할 수 있습니다.
-    # if st.button("모든 단어 완전히 삭제", type="secondary"):
-    #     st.session_state.words = []
-    #     st.info("모든 단어가 삭제되었어요! 새롭게 시작해보세요! EMOJI_8")
-    #     st.experimental_rerun()
-
-
-# =========================================================
-# EMOJI_9 3. 단어 암기 게임 시작 섹션 (플래시카드 모드)
-# =========================================================
-
-# 미리 정의된 단어가 항상 있으므로, 게임 시작 조건은 항상 충족됩니다.
-with tab2: # '게임 시작' 탭 안의 내용
-    # 섹션의 제목을 설정합니다.
-    st.header("EMOJI_10 단어 암기 게임 시작!")
-
-    # 'game_mode_active'가 False, 즉 게임 모드가 활성화되지 않은 상태라면
-    if not st.session_state.game_mode_active:
-        # '게임 시작!' 버튼을 만듭니다.
-        if st.button("게임 시작!", type="primary"):
-            # 게임 시작 전에 단어 목록을 무작위로 섞습니다.
-            random.shuffle(st.session_state.words) 
-            st.session_state.current_word_index = 0 # 현재 단어 인덱스를 0으로 초기화합니다.
-            st.session_state.game_mode_active = True # 게임 모드를 활성화합니다.
-            st.experimental_rerun() # 앱을 새로고침하여 게임 화면으로 전환합니다.
-    # 'game_mode_active'가 True, 즉 게임 모드가 활성화된 상태라면
+with col_display:
+    # 현재 인덱스에 해당하는 명언을 가져옵니다.
+    # 만약 모든 명언을 다 보았다면 다시 처음으로 돌아갑니다 (순환).
+    if st.session_state.all_quotes: # 명언이 하나라도 있다면
+        current_quote_obj = st.session_state.all_quotes[st.session_state.current_quote_index]
+        
+        # 명언 내용을 크게, 중앙에 표시합니다. Markdown을 사용하여 스타일을 적용합니다.
+        st.markdown(f"<h2 style='text-align: center; color: #4A90E2;'>“{current_quote_obj['quote']}”</h2>", unsafe_allow_html=True)
+        # 작가를 오른쪽 정렬하여 표시합니다.
+        st.markdown(f"<h3 style='text-align: right; color: #555555;'>– {current_quote_obj['author']}</h3>", unsafe_allow_html=True)
     else:
-        # 전체 단어의 개수를 가져옵니다.
-        total_words = len(st.session_state.words)
-        # 현재 단어 인덱스가 전체 단어 개수보다 작다면 (아직 모든 단어를 다 보지 않았다면)
-        if st.session_state.current_word_index < total_words:
-            # 현재 인덱스에 해당하는 단어 정보를 가져옵니다.
-            current_item = st.session_state.words[st.session_state.current_word_index]
+        st.info("아직 추가된 명언이 없어요! 아래에서 새로운 명언을 추가해보세요. EMOJI_6")
 
-            # 현재 보고 있는 단어를 크게 표시합니다.
-            st.subheader(f"✨ 단어: {current_item['word']}")
-
-            # '뜻 보기' 버튼을 만듭니다.
-            if st.button("뜻 보기 EMOJI_11", key="show_meaning_btn"):
-                # 버튼이 눌리면 해당 단어의 뜻을 보여줍니다.
-                st.write(f"**EMOJI_12 뜻: {current_item['meaning']}**")
-            
-            # 버튼 두 개를 나란히 배치하기 위해 컬럼을 나눕니다.
-            col1, col2 = st.columns(2)
-            with col1: # 첫 번째 컬럼에 '이전 단어' 버튼을 배치합니다.
-                # '이전 단어' 버튼을 만듭니다.
-                if st.button("이전 단어 ⏪", key="prev_word_btn"):
-                    # 현재 단어 인덱스가 0보다 크면 (첫 단어가 아니라면)
-                    if st.session_state.current_word_index > 0:
-                        st.session_state.current_word_index -= 1 # 인덱스를 1 감소시켜 이전 단어로 이동합니다.
-                        st.experimental_rerun() # 앱을 새로고침하여 변경된 단어를 보여줍니다.
-                    else:
-                        st.info("여기가 첫 단어예요! EMOJI_13") # 첫 단어일 경우 안내 메시지
-            with col2: # 두 번째 컬럼에 '다음 단어' 버튼을 배치합니다.
-                # '다음 단어' 버튼을 만듭니다.
-                if st.button("다음 단어 ⏩", key="next_word_btn"):
-                    st.session_state.current_word_index += 1 # 인덱스를 1 증가시켜 다음 단어로 이동합니다.
-                    st.experimental_rerun() # 앱을 새로고침하여 변경된 단어를 보여줍니다.
-        # 모든 단어를 다 살펴봤다면
+with col_button:
+    st.write("") # 공간을 조금 띄워줍니다.
+    st.write("") 
+    st.write("") 
+    # '다음 명언 보기' 버튼을 만듭니다.
+    if st.button("다음 명언 보기 EMOJI_7", type="primary"):
+        if st.session_state.all_quotes:
+            # 다음 명언 인덱스로 이동합니다. 리스트의 끝에 도달하면 0으로 다시 시작합니다.
+            st.session_state.current_quote_index = (st.session_state.current_quote_index + 1) % len(st.session_state.all_quotes)
+            st.experimental_rerun() # 화면을 새로고침하여 다음 명언을 보여줍니다.
         else:
-            # 게임 완료 메시지를 보여줍니다.
-            st.success("EMOJI_14 모든 단어를 다 살펴보셨어요! 대단해요!")
-            # '게임 다시 시작!' 버튼을 만듭니다.
-            if st.button("게임 다시 시작!", type="primary"):
-                st.session_state.game_mode_active = False # 게임 모드를 비활성화합니다.
-                st.session_state.current_word_index = 0 # 인덱스를 초기화합니다.
-                st.experimental_rerun() # 앱을 새로고침하여 게임 시작 화면으로 돌아갑니다.
+            st.warning("표시할 명언이 없어요! 먼저 명언을 추가해주세요. EMOJI_8")
 
-        # EMOJI_15 게임 종료 버튼 (항상 게임 진행 중에 보임)
-        if st.button("게임 종료 EMOJI_16", key="end_game_btn_always"): 
-            st.session_state.game_mode_active = False # 게임 모드를 비활성화합니다.
-            st.session_state.current_word_index = 0 # 인덱스를 초기화합니다.
-            st.info("게임을 종료합니다! 다음에 또 만나요! EMOJI_17") # 종료 메시지
-            st.experimental_rerun() # 앱을 새로고침하여 초기 화면으로 돌아갑니다.
+
+st.markdown("---") # 구분선을 추가합니다.
+
+# =========================================================
+# ➕ 3. 나만의 명언 추가하기
+# =========================================================
+
+# 'st.expander'를 사용하면 내용을 접었다 폈다 할 수 있어 깔끔하게 앱을 구성할 수 있어요.
+with st.expander("✨ 나만의 명언 추가하기"):
+    # 폼을 사용하여 명언과 작가를 입력받고, 버튼을 누를 때까지 내용을 일괄 처리합니다.
+    with st.form("add_quote_form"):
+        new_quote = st.text_area("명언을 입력해주세요. (200자 이내)", height=70, max_chars=200, key="new_quote_input")
+        new_author = st.text_input("작가를 입력해주세요. (선택 사항)", key="new_author_input")
+        
+        # 폼 제출 버튼입니다.
+        submitted = st.form_submit_button("나만의 명언 추가하기!")
+
+        if submitted:
+            if new_quote: # 명언 내용이 비어있지 않다면
+                if not new_author: # 작가가 입력되지 않았다면 '작자 미상'으로 기본 설정
+                    new_author = "작자 미상"
+                
+                # 새로운 명언을 session_state.all_quotes 리스트에 추가합니다.
+                st.session_state.all_quotes.append({'quote': new_quote, 'author': new_author})
+                st.success("새 명언이 추가되었어요! 감사합니다! EMOJI_9")
+                st.experimental_rerun() # 추가된 명언을 포함하여 앱을 새로고침합니다.
+            else:
+                st.warning("명언 내용을 입력해주세요! EMOJI_10")
+
+st.markdown("---") # 또 다른 구분선을 추가합니다.
+
+# =========================================================
+# EMOJI_11 4. 전체 명언 목록 보기
+# =========================================================
+
+with st.expander("EMOJI_12 모든 명언 보기"):
+    if st.session_state.all_quotes:
+        # st.dataframe을 사용하여 현재 저장된 모든 명언을 표 형태로 보여줍니다.
+        st.dataframe(st.session_state.all_quotes, use_container_width=True)
+
+        # 모든 명언을 초기화하는 버튼입니다. (기본 명언 + 사용자 추가 명언 모두 삭제 후 기본으로 되돌림)
+        if st.button("모든 명언 초기화 (기본 목록으로 되돌리기)", help="모든 명언을 삭제하고, 앱에 내장된 기본 명언 목록으로 되돌립니다.", type="secondary"):
+            st.session_state.all_quotes = list(default_quotes) # 기본 명언 목록으로 복원
+            st.session_state.current_quote_index = 0 # 인덱스 초기화
+            st.info("명언 목록이 초기화되었습니다! ✨")
+            st.experimental_rerun() # 변경사항 반영을 위해 새로고침
+
+    else:
+        st.info("아직 보여줄 명언이 없어요. 위에서 명언을 추가하거나, 앱을 새로고침하여 기본 명언을 불러올 수 있습니다. EMOJI_13")
