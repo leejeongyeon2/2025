@@ -36,15 +36,13 @@ words_list = [
 # 세션 상태 초기화
 # -------------------
 if "questions" not in st.session_state:
-    st.session_state.questions = random.sample(words_list, 10)  # 10문제 랜덤
+    st.session_state.questions = random.sample(words_list, 10)
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "score" not in st.session_state:
     st.session_state.score = 0
 if "answers" not in st.session_state:
-    st.session_state.answers = []  # 답안 기록
-if "submitted" not in st.session_state:
-    st.session_state.submitted = False  # 제출 여부
+    st.session_state.answers = []
 if "finished" not in st.session_state:
     st.session_state.finished = False
 
@@ -52,7 +50,6 @@ if "finished" not in st.session_state:
 # 보기 생성 함수
 # -------------------
 def make_options(correct_meaning):
-    """정답 + 3개의 랜덤 오답 보기 생성"""
     options = [correct_meaning]
     while len(options) < 4:
         m = random.choice(words_list)["meaning"]
@@ -76,17 +73,23 @@ if not st.session_state.finished:
     st.subheader(f"문제 {idx+1} / 10")
     st.write(f"영어 단어: **{question['word']}**")
 
-    # radio 선택
+    # 보기 생성
     options = make_options(question["meaning"])
-    if "choice" not in st.session_state:
-        st.session_state.choice = None
-    st.session_state.choice = st.radio("뜻을 선택하세요:", options, index=0, key=f"radio_{idx}")
+
+    # 문제별 radio key 고정 → 선택 유지
+    choice_key = f"choice_{idx}"
+    if choice_key not in st.session_state:
+        st.session_state[choice_key] = options[0]  # 기본값 설정
+
+    st.session_state[choice_key] = st.radio(
+        "뜻을 선택하세요:", options, index=options.index(st.session_state[choice_key]), key=choice_key
+    )
 
     # 제출 버튼
-    if st.button("제출"):
-        # 정답 기록
-        is_correct = st.session_state.choice == question["meaning"]
-        if is_correct:
+    if st.button("제출", key=f"submit_{idx}"):
+        selected = st.session_state[choice_key]
+        correct = selected == question["meaning"]
+        if correct:
             st.session_state.score += 1
             st.success("✅ 정답입니다!")
         else:
@@ -95,21 +98,17 @@ if not st.session_state.finished:
         # 답안 기록
         st.session_state.answers.append({
             "word": question["word"],
-            "your_answer": st.session_state.choice,
+            "your_answer": selected,
             "correct_answer": question["meaning"]
         })
 
-        # 제출 표시 및 다음 문제 이동
-        st.session_state.submitted = True
+        # 다음 문제 이동
+        st.session_state.current_index += 1
+        if st.session_state.current_index >= 10:
+            st.session_state.finished = True
 
-    # 제출 후 다음 문제 버튼
-    if st.session_state.submitted:
-        if st.button("다음 문제"):
-            st.session_state.current_index += 1
-            st.session_state.submitted = False
-            st.session_state.choice = None
-            if st.session_state.current_index >= 10:
-                st.session_state.finished = True
+        # radio 값 초기화 방지 → 새로운 문제 key 자동 적용
+        st.experimental_rerun()  # 안정적으로 다음 문제 표시
 
 # -------------------
 # 시험 종료 후 결과
@@ -123,12 +122,10 @@ if st.session_state.finished:
         if ans["your_answer"] != ans["correct_answer"]:
             st.write(f"- 단어: **{ans['word']}** → 당신의 답: {ans['your_answer']} ❌ | 정답: ✅ {ans['correct_answer']}")
 
-    # 다시 시작 버튼
     if st.button("다시 시작"):
         st.session_state.questions = random.sample(words_list, 10)
         st.session_state.current_index = 0
         st.session_state.score = 0
         st.session_state.answers = []
-        st.session_state.submitted = False
         st.session_state.finished = False
-        st.session_state.choice = None
+        st.experimental_rerun()
