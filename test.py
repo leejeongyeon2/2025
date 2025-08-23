@@ -2,12 +2,12 @@ import streamlit as st
 import random
 
 # -------------------
-# 기본 설정
+# 앱 기본 설정
 # -------------------
-st.set_page_config(page_title="단어 맞추기 앱", page_icon="📝", layout="centered")
+st.set_page_config(page_title="단어 맞추기 시험", page_icon="📝", layout="centered")
 
 # -------------------
-# 기본 단어 데이터 (예시 20개)
+# 기본 단어 데이터 (20개 예시)
 # -------------------
 default_words = [
     {"word": "apple", "meaning": "사과"},
@@ -35,77 +35,81 @@ default_words = [
 # -------------------
 # 세션 상태 초기화
 # -------------------
-if "words" not in st.session_state:      # 단어 리스트
-    st.session_state.words = default_words.copy()
-if "correct" not in st.session_state:    # 맞춘 개수
-    st.session_state.correct = 0
-if "wrong" not in st.session_state:      # 틀린 개수
-    st.session_state.wrong = 0
-if "quiz_word" not in st.session_state:  # 현재 문제 단어
-    st.session_state.quiz_word = random.choice(st.session_state.words)
-if "options" not in st.session_state:    # 현재 문제 보기
-    st.session_state.options = []
+if "questions" not in st.session_state:     # 시험 문제 리스트
+    st.session_state.questions = random.sample(default_words, 10)  # 10문제 랜덤 추출
+if "current_q" not in st.session_state:     # 현재 문제 번호
+    st.session_state.current_q = 0
+if "score" not in st.session_state:         # 맞은 개수
+    st.session_state.score = 0
+if "finished" not in st.session_state:      # 시험 종료 여부
+    st.session_state.finished = False
 
 # -------------------
-# 퀴즈 생성 함수
+# 퀴즈 보기 생성 함수
 # -------------------
-def make_quiz():
-    """랜덤으로 문제(단어와 보기 4개)를 생성"""
-    quiz_word = random.choice(st.session_state.words)  # 문제 단어
-    options = [quiz_word["meaning"]]                   # 정답 포함
-    # 오답 보기 추가
-    while len(options) < 4 and len(options) < len(st.session_state.words):
-        m = random.choice(st.session_state.words)["meaning"]
+def make_options(answer, all_words):
+    """정답 + 랜덤 오답으로 보기 4개 생성"""
+    options = [answer]
+    while len(options) < 4:
+        m = random.choice(all_words)["meaning"]
         if m not in options:
             options.append(m)
-    random.shuffle(options)                            # 보기 섞기
-    st.session_state.quiz_word = quiz_word
-    st.session_state.options = options
+    random.shuffle(options)
+    return options
 
 # -------------------
 # 앱 제목
 # -------------------
-st.title("📝 단어 맞추기 퀴즈 앱")
+st.title("📝 단어 맞추기 시험 모드 (10문제)")
 
 # -------------------
-# 단어 추가
+# 시험 진행
 # -------------------
-st.subheader("✏️ 단어 추가")
-with st.form("add_word"):
-    w = st.text_input("영어 단어 입력")
-    m = st.text_input("뜻 입력")
-    submitted = st.form_submit_button("추가")
-    if submitted and w and m:
-        st.session_state.words.append({"word": w, "meaning": m})
-        st.success(f"✅ 추가됨: {w} - {m}")
+if not st.session_state.finished:
+    # 현재 문제 가져오기
+    q_index = st.session_state.current_q
+    question = st.session_state.questions[q_index]
+
+    st.subheader(f"문제 {q_index+1} / 10")
+    st.write(f"영어 단어: **{question['word']}**")
+
+    # 보기 생성
+    options = make_options(question["meaning"], default_words)
+
+    # 선택
+    choice = st.radio("뜻을 고르세요:", options, index=None, key=f"q{q_index}")
+
+    # 정답 확인 버튼
+    if st.button("정답 제출"):
+        if choice == question["meaning"]:
+            st.session_state.score += 1
+            st.success("✅ 정답입니다!")
+        else:
+            st.error(f"❌ 오답입니다! 정답: {question['meaning']}")
+
+        # 다음 문제로 이동
+        st.session_state.current_q += 1
+
+        # 시험 종료 체크
+        if st.session_state.current_q >= 10:
+            st.session_state.finished = True
 
 # -------------------
-# 퀴즈 문제 표시
+# 시험 종료 후 결과
 # -------------------
-st.subheader("❓ 퀴즈 모드")
-
-# 새로운 문제 생성 버튼
-if st.button("새 문제 출제"):
-    make_quiz()
-
-# 현재 문제 단어 보여주기
-quiz_word = st.session_state.quiz_word
-st.write(f"영어 단어: **{quiz_word['word']}**")
-
-# 보기 선택
-choice = st.radio("뜻을 고르세요:", st.session_state.options, index=None)
-
-# 정답 확인 버튼
-if st.button("정답 확인"):
-    if choice == quiz_word["meaning"]:
-        st.session_state.correct += 1
-        st.success("✅ 정답입니다!")
+if st.session_state.finished:
+    st.subheader("📊 시험 종료!")
+    st.write(f"최종 점수: **{st.session_state.score} / 10**")
+    if st.session_state.score == 10:
+        st.success("🎉 퍼펙트! 완벽하게 맞췄습니다!")
+    elif st.session_state.score >= 7:
+        st.info("👍 잘했어요! 조금 더 연습하면 완벽해요.")
     else:
-        st.session_state.wrong += 1
-        st.error(f"❌ 오답입니다! 정답: {quiz_word['meaning']}")
+        st.warning("📖 아직 연습이 필요합니다. 다시 도전해 보세요!")
 
-# -------------------
-# 통계
-# -------------------
-st.subheader("📊 통계")
-st.write(f"👍 맞춘 개수: **{st.session_state.correct}**  |  👎 틀린 개수: **{st.session_state.wrong}**")
+    # 다시 시작 버튼
+    if st.button("다시 시작"):
+        st.session_state.questions = random.sample(default_words, 10)
+        st.session_state.current_q = 0
+        st.session_state.score = 0
+        st.session_state.finished = False
